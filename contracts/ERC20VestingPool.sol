@@ -5,14 +5,23 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-struct VestingInfo {
+struct VestingSchedule {
     bool valid;
-    uint256 vestingAmount;
+    uint256 openTime;
+    uint256 freezeDuration;
     uint256 freezeAmount;
-    uint64 freezeDuration;
-    uint64 vestingDuration;
-    uint256 startTime;
+    uint256 vestingDuration;
+    uint256 vestingAmount;
     uint256 claimed;
+}
+
+struct VestingScheduleConfig {
+    address beneficiaryAddress;
+    bool openNow;
+    uint256 freezeDuration;
+    uint256 freezeAmount;
+    uint256 vestingDuration;
+    uint256 vestingAmount;
 }
 
 contract ERC20VestingPool is Ownable {
@@ -22,7 +31,7 @@ contract ERC20VestingPool is Ownable {
     event EtherReleased(uint256 amount);
     event ERC20Released(address indexed token, uint256 amount);
 
-    mapping(address => VestingInfo) private _vestingSchedules;
+    mapping(address => VestingSchedule) private _vestingSchedules;
 
     /**
      * @dev Set the beneficiary, start timestamp and vesting duration of the vesting wallet.
@@ -33,38 +42,48 @@ contract ERC20VestingPool is Ownable {
         _token = IERC20(tokenAddress);
     }
 
-    function addVestingSchedule(
-        address beneficiaryAddress,
-        uint256 _vestingAmount,
-        uint256 _freezeAmount,
-        uint64 _freezeDuration,
-        uint64 _vestingDuration,
-        bool startNow
-    ) external onlyOwner {
+    function addVestingSchedule(VestingScheduleConfig memory _config)
+        external
+        onlyOwner
+    {
         require(
-            beneficiaryAddress != address(0),
+            _config.beneficiaryAddress != address(0),
             "Beneficiary is zero address"
         );
 
-        VestingInfo storage vestingInfo = _vestingSchedules[beneficiaryAddress];
+        VestingSchedule storage vestingSchedule = _vestingSchedules[
+            _config.beneficiaryAddress
+        ];
 
-        require(!vestingInfo.valid, "Vesting schedule already exists");
-        require(_vestingAmount + _freezeAmount > 0, "Invalid vesting amount");
+        require(!vestingSchedule.valid, "Vesting schedule already exists");
+        require(
+            _config.vestingAmount + _config.freezeAmount > 0,
+            "Invalid vesting amount"
+        );
 
         IERC20(_token).transferFrom(
             msg.sender,
             address(this),
-            _vestingAmount + _freezeAmount
+            _config.vestingAmount + _config.freezeAmount
         );
 
-        vestingInfo.valid = true;
-        vestingInfo.vestingAmount = _vestingAmount;
-        vestingInfo.freezeAmount = _freezeAmount;
-        vestingInfo.freezeDuration = _freezeDuration;
-        vestingInfo.vestingDuration = _vestingDuration;
-        vestingInfo.startTime = startNow
+        vestingSchedule.valid = true;
+        vestingSchedule.vestingAmount = _config.vestingAmount;
+        vestingSchedule.freezeAmount = _config.freezeAmount;
+        vestingSchedule.freezeDuration = _config.freezeDuration;
+        vestingSchedule.vestingDuration = _config.vestingDuration;
+        vestingSchedule.openTime = _config.openNow
             ? block.timestamp
-            : 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;        
+            : 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+    }
+
+    function getVestingSchedule(address _beneficiaryAddress)
+        external
+        view
+        onlyOwner
+        returns (VestingSchedule memory)
+    {
+        return _vestingSchedules[_beneficiaryAddress];
     }
 
     // /**

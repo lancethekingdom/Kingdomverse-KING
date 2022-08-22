@@ -6,21 +6,29 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Capped.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./ERC20VestingPool.sol";
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-
 contract King is ERC20, Pausable, Ownable {
-    uint256 public constant RESERVE = 6727500 ether;
-    uint256 public constant MAX_SUPPLY = 250000000 ether;
-    address public authSigner;
+    uint256 public reserve;
+    uint256 public constant MAX_SUPPLY = 1000000000 ether;
+    ERC20VestingPool private immutable _vestingPool;
 
     event AuthSignerSet(address indexed newSigner);
 
-    constructor(address _authSigner) ERC20("PEACH", "PEACH") {
-        require(_authSigner != address(0), "Invalid addr");
-        authSigner = _authSigner;
-        _mint(msg.sender, RESERVE);
+    constructor(VestingScheduleConfig[] memory _initialVestingScheduleConfigs)
+        ERC20("KING", "KING")
+    {
+        uint totalReserve = 0;
+        // compute the total reserve
+        for (uint256 i = 0; i < _initialVestingScheduleConfigs.length; i++) {
+            VestingScheduleConfig memory config = _initialVestingScheduleConfigs[i];
+            totalReserve += (config.freezeAmount + config.vestingAmount);
+         
+        }
+        // _mint(msg.sender, RESERVE);
+        _vestingPool = new ERC20VestingPool(address(this));
     }
 
     function pause() external onlyOwner {
@@ -29,12 +37,6 @@ contract King is ERC20, Pausable, Ownable {
 
     function unpause() external onlyOwner {
         _unpause();
-    }
-
-    function setAuthSigner(address _authSigner) external onlyOwner {
-        require(_authSigner != address(0), "Invalid addr");
-        authSigner = _authSigner;
-        emit AuthSignerSet(_authSigner);
     }
 
     function _beforeTokenTransfer(
@@ -51,42 +53,18 @@ contract King is ERC20, Pausable, Ownable {
         super._mint(account, amount);
     }
 
-    function splitSignature(bytes memory sig)
-        internal
-        pure
-        returns (
-            uint8,
-            bytes32,
-            bytes32
-        )
-    {
-        require(sig.length == 65, "invalid sig");
-
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        assembly {
-            r := mload(add(sig, 32))
-            s := mload(add(sig, 64))
-            v := byte(0, mload(add(sig, 96)))
-        }
-
-        return (v, r, s);
+    function getVestingPoolAddress() external view returns (address) {
+        return address(_vestingPool);
     }
 
-    function recoverSigner(bytes32 message, bytes memory sig)
-        internal
-        pure
-        returns (address)
+    function addVestingSchedule(VestingScheduleConfig memory _config)
+        public
+        onlyOwner
     {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-
-        (v, r, s) = splitSignature(sig);
-        return ecrecover(message, v, r, s);
+        approve(
+            address(_vestingPool),
+            _config.freezeAmount + _config.vestingAmount
+        );
+        _vestingPool.addVestingSchedule(_config);
     }
-
-
 }

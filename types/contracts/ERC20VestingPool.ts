@@ -27,9 +27,63 @@ import type {
   PromiseOrValue,
 } from "../common";
 
+export type VestingScheduleConfigStruct = {
+  beneficiaryAddress: PromiseOrValue<string>;
+  openNow: PromiseOrValue<boolean>;
+  freezeDuration: PromiseOrValue<BigNumberish>;
+  freezeAmount: PromiseOrValue<BigNumberish>;
+  vestingDuration: PromiseOrValue<BigNumberish>;
+  vestingAmount: PromiseOrValue<BigNumberish>;
+};
+
+export type VestingScheduleConfigStructOutput = [
+  string,
+  boolean,
+  BigNumber,
+  BigNumber,
+  BigNumber,
+  BigNumber
+] & {
+  beneficiaryAddress: string;
+  openNow: boolean;
+  freezeDuration: BigNumber;
+  freezeAmount: BigNumber;
+  vestingDuration: BigNumber;
+  vestingAmount: BigNumber;
+};
+
+export type VestingScheduleStruct = {
+  valid: PromiseOrValue<boolean>;
+  openTime: PromiseOrValue<BigNumberish>;
+  freezeDuration: PromiseOrValue<BigNumberish>;
+  freezeAmount: PromiseOrValue<BigNumberish>;
+  vestingDuration: PromiseOrValue<BigNumberish>;
+  vestingAmount: PromiseOrValue<BigNumberish>;
+  claimed: PromiseOrValue<BigNumberish>;
+};
+
+export type VestingScheduleStructOutput = [
+  boolean,
+  BigNumber,
+  BigNumber,
+  BigNumber,
+  BigNumber,
+  BigNumber,
+  BigNumber
+] & {
+  valid: boolean;
+  openTime: BigNumber;
+  freezeDuration: BigNumber;
+  freezeAmount: BigNumber;
+  vestingDuration: BigNumber;
+  vestingAmount: BigNumber;
+  claimed: BigNumber;
+};
+
 export interface ERC20VestingPoolInterface extends utils.Interface {
   functions: {
-    "addVestingSchedule(address,uint256,uint256,uint64,uint64,bool)": FunctionFragment;
+    "addVestingSchedule((address,bool,uint256,uint256,uint256,uint256))": FunctionFragment;
+    "getVestingSchedule(address)": FunctionFragment;
     "owner()": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
@@ -38,6 +92,7 @@ export interface ERC20VestingPoolInterface extends utils.Interface {
   getFunction(
     nameOrSignatureOrTopic:
       | "addVestingSchedule"
+      | "getVestingSchedule"
       | "owner"
       | "renounceOwnership"
       | "transferOwnership"
@@ -45,14 +100,11 @@ export interface ERC20VestingPoolInterface extends utils.Interface {
 
   encodeFunctionData(
     functionFragment: "addVestingSchedule",
-    values: [
-      PromiseOrValue<string>,
-      PromiseOrValue<BigNumberish>,
-      PromiseOrValue<BigNumberish>,
-      PromiseOrValue<BigNumberish>,
-      PromiseOrValue<BigNumberish>,
-      PromiseOrValue<boolean>
-    ]
+    values: [VestingScheduleConfigStruct]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getVestingSchedule",
+    values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(
@@ -66,6 +118,10 @@ export interface ERC20VestingPoolInterface extends utils.Interface {
 
   decodeFunctionResult(
     functionFragment: "addVestingSchedule",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getVestingSchedule",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
@@ -150,14 +206,14 @@ export interface ERC20VestingPool extends BaseContract {
 
   functions: {
     addVestingSchedule(
-      beneficiaryAddress: PromiseOrValue<string>,
-      _vestingAmount: PromiseOrValue<BigNumberish>,
-      _freezeAmount: PromiseOrValue<BigNumberish>,
-      _freezeDuration: PromiseOrValue<BigNumberish>,
-      _vestingDuration: PromiseOrValue<BigNumberish>,
-      startNow: PromiseOrValue<boolean>,
+      _config: VestingScheduleConfigStruct,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
+
+    getVestingSchedule(
+      _beneficiaryAddress: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<[VestingScheduleStructOutput]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
@@ -172,14 +228,14 @@ export interface ERC20VestingPool extends BaseContract {
   };
 
   addVestingSchedule(
-    beneficiaryAddress: PromiseOrValue<string>,
-    _vestingAmount: PromiseOrValue<BigNumberish>,
-    _freezeAmount: PromiseOrValue<BigNumberish>,
-    _freezeDuration: PromiseOrValue<BigNumberish>,
-    _vestingDuration: PromiseOrValue<BigNumberish>,
-    startNow: PromiseOrValue<boolean>,
+    _config: VestingScheduleConfigStruct,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
+
+  getVestingSchedule(
+    _beneficiaryAddress: PromiseOrValue<string>,
+    overrides?: CallOverrides
+  ): Promise<VestingScheduleStructOutput>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
@@ -194,14 +250,14 @@ export interface ERC20VestingPool extends BaseContract {
 
   callStatic: {
     addVestingSchedule(
-      beneficiaryAddress: PromiseOrValue<string>,
-      _vestingAmount: PromiseOrValue<BigNumberish>,
-      _freezeAmount: PromiseOrValue<BigNumberish>,
-      _freezeDuration: PromiseOrValue<BigNumberish>,
-      _vestingDuration: PromiseOrValue<BigNumberish>,
-      startNow: PromiseOrValue<boolean>,
+      _config: VestingScheduleConfigStruct,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    getVestingSchedule(
+      _beneficiaryAddress: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<VestingScheduleStructOutput>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
@@ -238,13 +294,13 @@ export interface ERC20VestingPool extends BaseContract {
 
   estimateGas: {
     addVestingSchedule(
-      beneficiaryAddress: PromiseOrValue<string>,
-      _vestingAmount: PromiseOrValue<BigNumberish>,
-      _freezeAmount: PromiseOrValue<BigNumberish>,
-      _freezeDuration: PromiseOrValue<BigNumberish>,
-      _vestingDuration: PromiseOrValue<BigNumberish>,
-      startNow: PromiseOrValue<boolean>,
+      _config: VestingScheduleConfigStruct,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    getVestingSchedule(
+      _beneficiaryAddress: PromiseOrValue<string>,
+      overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
@@ -261,13 +317,13 @@ export interface ERC20VestingPool extends BaseContract {
 
   populateTransaction: {
     addVestingSchedule(
-      beneficiaryAddress: PromiseOrValue<string>,
-      _vestingAmount: PromiseOrValue<BigNumberish>,
-      _freezeAmount: PromiseOrValue<BigNumberish>,
-      _freezeDuration: PromiseOrValue<BigNumberish>,
-      _vestingDuration: PromiseOrValue<BigNumberish>,
-      startNow: PromiseOrValue<boolean>,
+      _config: VestingScheduleConfigStruct,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    getVestingSchedule(
+      _beneficiaryAddress: PromiseOrValue<string>,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
