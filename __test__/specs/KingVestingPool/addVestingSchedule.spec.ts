@@ -63,7 +63,7 @@ describe('UNIT TEST: KingVestingPool - addVestingSchedule', () => {
   })
 
   it('should transfer corresponding token from caller to vesting pool & create vestingSchedule', async () => {
-    const [owner, beneficiaryA, beneficiaryB] = await ethers.getSigners()
+    const [owner, beneficiaryA] = await ethers.getSigners()
 
     const configA: VestingScheduleConfigStruct = {
       beneficiaryAddress: beneficiaryA.address,
