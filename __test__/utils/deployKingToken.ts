@@ -1,11 +1,26 @@
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { ethers } from 'hardhat'
 import { King, VestingScheduleConfigStruct } from '../../types/contracts/King'
 
+export type DeployKingTokenConfig = {
+  vestingScheduleConfigs?: VestingScheduleConfigStruct[]
+  owner?: SignerWithAddress
+}
+
 export const deployKingToken = async (
-  vestingScheduleConfigs: VestingScheduleConfigStruct[] = [],
+  { vestingScheduleConfigs = [], owner }: DeployKingTokenConfig = {
+    vestingScheduleConfigs: [],
+  },
 ) => {
-  const [owner] = await ethers.getSigners()
+  const [defaultOwner] = await ethers.getSigners()
   const TokenContractFactory = await ethers.getContractFactory('King')
-  const token = await TokenContractFactory.connect(owner).deploy(vestingScheduleConfigs)
-  return token as King
+  const targetOwner = owner ?? defaultOwner
+  const token = await TokenContractFactory.connect(targetOwner).deploy(
+    vestingScheduleConfigs,
+  )
+  return [token, targetOwner, vestingScheduleConfigs] as [
+    King,
+    SignerWithAddress,
+    VestingScheduleConfigStruct[],
+  ]
 }

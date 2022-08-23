@@ -43,6 +43,10 @@ contract KingVestingPool is Ownable {
         _king = IERC20(tokenAddress);
     }
 
+    function getKingTokenAddress() external view returns (address) {
+        return address(_king);
+    }
+
     function addVestingSchedule(VestingScheduleConfig memory _config)
         public
         onlyOwner
@@ -57,7 +61,7 @@ contract KingVestingPool is Ownable {
         ];
         require(!vestingSchedule.valid, "Vesting schedule already exists");
         require(
-            _config.vestingAmount + _config.freezeAmount > 0,
+            (_config.vestingAmount + _config.freezeAmount) > 0,
             "Invalid vesting amount"
         );
         _king.transferFrom(

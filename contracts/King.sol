@@ -29,26 +29,31 @@ contract King is ERC20, Pausable, Ownable {
             totalVestingAmount += config.freezeAmount;
         }
         reserve = totalVestingAmount;
-        
-        _mint(msg.sender, reserve);
+
+        _mint(address(this), reserve);
         _vestingPool = new KingVestingPool(address(this));
+        _approve(address(this), address(_vestingPool), reserve);
     }
 
-    function initVestingPool(VestingScheduleConfig[] memory _initialVestingScheduleConfigs) external onlyOwner {
+    function initVestingPool(
+        VestingScheduleConfig[] memory _initialVestingScheduleConfigs
+    ) external onlyOwner {
         require(
             !hasVestingPoolInitialized,
             "Vesting pool has been initialized"
         );
-        uint256 totalVestingAmount = 0;
+        uint256 totalInitialVestingAmount = 0;
         // initialize all the vesting schedule
         for (uint256 i = 0; i < _initialVestingScheduleConfigs.length; i++) {
             VestingScheduleConfig
                 memory config = _initialVestingScheduleConfigs[i];
-            totalVestingAmount += config.vestingAmount;
-            totalVestingAmount += config.freezeAmount;
+            totalInitialVestingAmount += config.vestingAmount;
+            totalInitialVestingAmount += config.freezeAmount;
         }
-        require(totalVestingAmount==reserve, "Vesting amount does not match with reserved mount");
-        _approve(address(msg.sender), address(_vestingPool), reserve);
+        require(
+            totalInitialVestingAmount == reserve,
+            "Vesting amount does not match with reserved mount"
+        );
         _vestingPool.addVestingSchedules(_initialVestingScheduleConfigs);
         hasVestingPoolInitialized = true;
     }
