@@ -1,32 +1,35 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
-import { ethers } from 'hardhat'
 import { KingVestingPool } from '../../types/contracts/KingVestingPool'
-import { King, VestingScheduleConfigStruct } from '../../types/contracts/King'
-import { deployKingToken, DeployKingTokenConfig } from './deployKingToken'
+// @ts-ignore
+import { ethers } from 'hardhat'
+import { MintableERC20 } from '../../types/contracts/MintableERC20'
+import { deployMintableToken } from './deployMintableToken'
+import { King } from '../../types/contracts/King'
 
 export const deployKingVestingPool = async ({
-  token,
   owner,
-  vestingScheduleConfigs = [],
+  token,
 }: {
-  token?: King
-} & DeployKingTokenConfig) => {
+  owner?: SignerWithAddress
+  token?: King | MintableERC20
+} = {}) => {
   const [defaultOwner] = await ethers.getSigners()
-  const TokenContractFactory = await ethers.getContractFactory(
+  const targetOwner = owner ?? defaultOwner
+
+  const targetToken =
+    token ?? (await deployMintableToken({ owner: targetOwner }))[0]
+
+  const VestingContractFactory = await ethers.getContractFactory(
     'KingVestingPool',
   )
-  const targetOwner = owner ?? defaultOwner
-  const targetToken =
-    token ??
-    (await deployKingToken({ owner: targetOwner, vestingScheduleConfigs }))[0]
 
-  const vestingPool = await TokenContractFactory.connect(
-    owner ?? defaultOwner,
-  ).deploy(targetToken.address)
-  return [vestingPool, targetToken, owner, vestingScheduleConfigs] as [
+  const vestingPool = await VestingContractFactory.connect(targetOwner).deploy(
+    targetToken.address,
+  )
+
+  return [vestingPool, targetToken, targetOwner] as [
     KingVestingPool,
-    King,
+    MintableERC20,
     SignerWithAddress,
-    VestingScheduleConfigStruct[],
   ]
 }

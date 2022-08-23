@@ -3,3 +3,4 @@
 /* eslint-disable */
 export { King__factory } from "./King__factory";
 export { KingVestingPool__factory } from "./KingVestingPool__factory";
+export { MintableERC20__factory } from "./MintableERC20__factory";

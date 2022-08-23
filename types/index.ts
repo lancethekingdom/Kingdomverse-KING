@@ -24,3 +24,5 @@ export type { King } from "./contracts/King";
 export { King__factory } from "./factories/contracts/King__factory";
 export type { KingVestingPool } from "./contracts/KingVestingPool";
 export { KingVestingPool__factory } from "./factories/contracts/KingVestingPool__factory";
+export type { MintableERC20 } from "./contracts/MintableERC20";
+export { MintableERC20__factory } from "./factories/contracts/MintableERC20__factory";

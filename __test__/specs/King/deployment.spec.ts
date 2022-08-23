@@ -1,10 +1,12 @@
 import { deployKingToken } from '../../utils/deployKingToken'
 import { expect, assert } from 'chai'
 import { VestingScheduleConfigStruct } from '../../../types/contracts/King'
+// @ts-ignore
 import { ethers } from 'hardhat'
 import { UnitParser } from '../../utils/UnitParser'
 import Chance from 'chance'
 import { SafeMath } from '../../utils/safeMath'
+import { BigNumber } from 'ethers'
 const chance = new Chance()
 
 describe('UNIT TEST: King Token - deployment', () => {
@@ -23,31 +25,39 @@ describe('UNIT TEST: King Token - deployment', () => {
       beneficiaryAddress: beneficiaryA.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
     const configB: VestingScheduleConfigStruct = {
       beneficiaryAddress: beneficiaryA.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
 
     const [token] = await deployKingToken({
       vestingScheduleConfigs: [configA, configB],
     })
-    const reservedTokenAmount = await token.reserve()
+    const reservedTokenAmount = UnitParser.fromEther(await token.reserve())
     const configuredTotalVestingAmount = SafeMath.add(
       SafeMath.add(
-        configA.freezeAmount as number,
-        configA.vestingAmount as number,
+        UnitParser.fromEther(configA.freezeAmount as BigNumber),
+        UnitParser.fromEther(configA.vestingAmount as BigNumber),
       ),
       SafeMath.add(
-        configB.freezeAmount as number,
-        configB.vestingAmount as number,
+        UnitParser.fromEther(configB.freezeAmount as BigNumber),
+        UnitParser.fromEther(configB.vestingAmount as BigNumber),
       ),
     )
 
@@ -61,31 +71,41 @@ describe('UNIT TEST: King Token - deployment', () => {
       beneficiaryAddress: beneficiaryA.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
     const configB: VestingScheduleConfigStruct = {
       beneficiaryAddress: beneficiaryA.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
 
     const [token] = await deployKingToken({
       vestingScheduleConfigs: [configA, configB],
     })
-    const mintedReserveTokenAmount = await token.balanceOf(token.address)
+    const mintedReserveTokenAmount = UnitParser.fromEther(
+      await token.balanceOf(token.address),
+    )
     const configuredTotalVestingAmount = SafeMath.add(
       SafeMath.add(
-        configA.freezeAmount as number,
-        configA.vestingAmount as number,
+        UnitParser.fromEther(configA.freezeAmount as BigNumber),
+        UnitParser.fromEther(configA.vestingAmount as BigNumber),
       ),
       SafeMath.add(
-        configB.freezeAmount as number,
-        configB.vestingAmount as number,
+        UnitParser.fromEther(configB.freezeAmount as BigNumber),
+        UnitParser.fromEther(configB.vestingAmount as BigNumber),
       ),
     )
 
@@ -99,35 +119,42 @@ describe('UNIT TEST: King Token - deployment', () => {
       beneficiaryAddress: beneficiaryA.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
     const configB: VestingScheduleConfigStruct = {
       beneficiaryAddress: beneficiaryA.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
 
     const [token] = await deployKingToken({
       vestingScheduleConfigs: [configA, configB],
     })
     const vestinPoolAddress = await token.getVestingPoolAddress()
-    const vestingPoolAllowanceAmount = await token.allowance(
-      token.address,
-      vestinPoolAddress,
+    const vestingPoolAllowanceAmount = UnitParser.fromEther(
+      await token.allowance(token.address, vestinPoolAddress),
     )
     const configuredTotalVestingAmount = SafeMath.add(
       SafeMath.add(
-        configA.freezeAmount as number,
-        configA.vestingAmount as number,
+        UnitParser.fromEther(configA.freezeAmount as BigNumber),
+        UnitParser.fromEther(configA.vestingAmount as BigNumber),
       ),
       SafeMath.add(
-        configB.freezeAmount as number,
-        configB.vestingAmount as number,
+        UnitParser.fromEther(configB.freezeAmount as BigNumber),
+        UnitParser.fromEther(configB.vestingAmount as BigNumber),
       ),
     )
 

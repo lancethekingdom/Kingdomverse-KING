@@ -1,9 +1,12 @@
 import { expect, assert } from 'chai'
 import { VestingScheduleConfigStruct } from '../../../types/contracts/King'
+// @ts-ignore
 import { ethers } from 'hardhat'
 import Chance from 'chance'
 import { SafeMath } from '../../utils/safeMath'
 import { deployKingVestingPool } from '../../utils/deployKingVestingPool'
+import { UnitParser } from '../../utils/UnitParser'
+import { BigNumber } from 'ethers'
 const chance = new Chance()
 
 describe('UNIT TEST: KingVestingPool - addVestingSchedule', () => {
@@ -14,9 +17,13 @@ describe('UNIT TEST: KingVestingPool - addVestingSchedule', () => {
       beneficiaryAddress: notOwner.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
     return vestingPool
       .connect(notOwner)
@@ -34,9 +41,13 @@ describe('UNIT TEST: KingVestingPool - addVestingSchedule', () => {
       beneficiaryAddress: '0x0000000000000000000000000000000000000000',
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
     const [vestingPool] = await deployKingVestingPool({
       owner,
@@ -58,65 +69,52 @@ describe('UNIT TEST: KingVestingPool - addVestingSchedule', () => {
       beneficiaryAddress: beneficiaryA.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
-    }
-    const configB: VestingScheduleConfigStruct = {
-      beneficiaryAddress: beneficiaryB.address,
-      startNow: false,
-      freezeDuration: 0,
-      freezeAmount: configA.freezeAmount,
-      vestingDuration: 0,
-      vestingAmount: configA.vestingAmount,
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
     const [vestingPool, token] = await deployKingVestingPool({
       owner,
-      vestingScheduleConfigs: [configA, configB],
     })
 
     await token
       .connect(owner)
       .approve(
         vestingPool.address,
-        SafeMath.add(
-          configA.freezeAmount as number,
-          configA.vestingAmount as number,
+        (configA.freezeAmount as BigNumber).add(
+          configA.vestingAmount as BigNumber,
         ),
       )
-
-    const balanceOfVestingPoolBefore = await token.balanceOf(
-      vestingPool.address,
+    const balanceOfVestingPoolBefore = UnitParser.fromEther(
+      await token.balanceOf(vestingPool.address),
     )
 
-    const balanceOfCallerBefore = await token.balanceOf(owner.address)
+    const balanceOfCallerBefore = UnitParser.fromEther(
+      await token.balanceOf(owner.address),
+    )
+
     await vestingPool.connect(owner).addVestingSchedule(configA)
 
-    const balanceOfVestingPoolAfter = await token.balanceOf(vestingPool.address)
-    const balanceOfCallerAfter = await token.balanceOf(owner.address)
+    const balanceOfVestingPoolAfter = UnitParser.fromEther(
+      await token.balanceOf(vestingPool.address),
+    )
+    const balanceOfCallerAfter = UnitParser.fromEther(
+      await token.balanceOf(owner.address),
+    )
 
-    expect(
-      SafeMath.sub(
-        balanceOfCallerBefore.toNumber(),
-        balanceOfCallerAfter.toNumber(),
-      ),
-    ).to.equal(
+    expect(SafeMath.sub(balanceOfCallerBefore, balanceOfCallerAfter)).to.equal(
       SafeMath.add(
-        configA.freezeAmount as number,
-        configA.vestingAmount as number,
+        UnitParser.fromEther(configA.freezeAmount as BigNumber),
+        UnitParser.fromEther(configA.vestingAmount as BigNumber),
       ),
     )
 
-    expect(
-      SafeMath.sub(
-        balanceOfCallerBefore.toNumber(),
-        balanceOfCallerAfter.toNumber(),
-      ),
-    ).to.equal(
-      SafeMath.sub(
-        balanceOfVestingPoolAfter.toNumber(),
-        balanceOfVestingPoolBefore.toNumber(),
-      ),
+    expect(SafeMath.sub(balanceOfCallerBefore, balanceOfCallerAfter)).to.equal(
+      SafeMath.sub(balanceOfVestingPoolAfter, balanceOfVestingPoolBefore),
     )
   })
 
@@ -127,30 +125,24 @@ describe('UNIT TEST: KingVestingPool - addVestingSchedule', () => {
       beneficiaryAddress: beneficiaryA.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
-    }
-    const configB: VestingScheduleConfigStruct = {
-      beneficiaryAddress: beneficiaryB.address,
-      startNow: false,
-      freezeDuration: 0,
-      freezeAmount: configA.freezeAmount,
-      vestingDuration: 0,
-      vestingAmount: configA.vestingAmount,
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
     const [vestingPool, token] = await deployKingVestingPool({
       owner,
-      vestingScheduleConfigs: [configA, configB],
     })
 
     await token
       .connect(owner)
       .approve(
         vestingPool.address,
-        SafeMath.add(
-          configA.freezeAmount as number,
-          configA.vestingAmount as number,
+        (configA.freezeAmount as BigNumber).add(
+          configA.vestingAmount as BigNumber,
         ),
       )
 
@@ -178,30 +170,36 @@ describe('UNIT TEST: KingVestingPool - addVestingSchedule', () => {
       beneficiaryAddress: beneficiaryA.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: chance.integer({ min: 1, max: 2000000 }),
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: chance.integer({ min: 1, max: 2000000 }),
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
     const configB: VestingScheduleConfigStruct = {
       beneficiaryAddress: beneficiaryB.address,
       startNow: false,
       freezeDuration: 0,
-      freezeAmount: configA.freezeAmount,
+      freezeAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
       vestingDuration: 0,
-      vestingAmount: configA.vestingAmount,
+      vestingAmount: UnitParser.toEther(
+        chance.integer({ min: 1, max: 2000000 }),
+      ),
     }
-    const [vestingPool, token, , configs] = await deployKingVestingPool({
+    const [vestingPool, token] = await deployKingVestingPool({
       owner,
-      vestingScheduleConfigs: [configA, configB],
     })
 
     await token
       .connect(owner)
       .approve(
         vestingPool.address,
-        SafeMath.add(
-          configA.freezeAmount as number,
-          configA.vestingAmount as number,
+        (configA.freezeAmount as BigNumber).add(
+          configA.vestingAmount as BigNumber,
         ),
       )
     await vestingPool.connect(owner).addVestingSchedule(configA)

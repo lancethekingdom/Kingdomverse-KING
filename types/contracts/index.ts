@@ -3,3 +3,4 @@
 /* eslint-disable */
 export type { King } from "./King";
 export type { KingVestingPool } from "./KingVestingPool";
+export type { MintableERC20 } from "./MintableERC20";

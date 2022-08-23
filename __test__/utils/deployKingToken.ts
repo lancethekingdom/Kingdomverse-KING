@@ -1,4 +1,5 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
+// @ts-ignore
 import { ethers } from 'hardhat'
 import { King, VestingScheduleConfigStruct } from '../../types/contracts/King'
 
