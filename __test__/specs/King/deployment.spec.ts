@@ -7,7 +7,7 @@ import Chance from 'chance'
 import { SafeMath } from '../../utils/safeMath'
 const chance = new Chance()
 
-describe.only('UNIT TEST: King Token - deployment', () => {
+describe('UNIT TEST: King Token - deployment', () => {
   it('should return correct name when token is deployed', async () => {
     const [token] = await deployKingToken()
     const tokenName = await token.name()
