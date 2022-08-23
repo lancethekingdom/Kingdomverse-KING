@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 struct VestingSchedule {
     bool valid;
-    uint256 openTime;
+    uint256 startTime;
     uint256 freezeDuration;
     uint256 freezeAmount;
     uint256 vestingDuration;
@@ -17,7 +17,7 @@ struct VestingSchedule {
 
 struct VestingScheduleConfig {
     address beneficiaryAddress;
-    bool openNow;
+    bool startNow;
     uint256 freezeDuration;
     uint256 freezeAmount;
     uint256 vestingDuration;
@@ -72,7 +72,7 @@ contract ERC20VestingPool is Ownable {
         vestingSchedule.freezeAmount = _config.freezeAmount;
         vestingSchedule.freezeDuration = _config.freezeDuration;
         vestingSchedule.vestingDuration = _config.vestingDuration;
-        vestingSchedule.openTime = _config.openNow
+        vestingSchedule.startTime = _config.startNow
             ? block.timestamp
             : 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     }

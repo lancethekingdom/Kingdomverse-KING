@@ -11,24 +11,20 @@ import "./ERC20VestingPool.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 contract King is ERC20, Pausable, Ownable {
-    uint256 public reserve;
+    uint256 public constant RESERVE = 1000000000 ether;
     uint256 public constant MAX_SUPPLY = 1000000000 ether;
     ERC20VestingPool private immutable _vestingPool;
-
-    event AuthSignerSet(address indexed newSigner);
 
     constructor(VestingScheduleConfig[] memory _initialVestingScheduleConfigs)
         ERC20("KING", "KING")
     {
-        uint totalReserve = 0;
-        // compute the total reserve
-        for (uint256 i = 0; i < _initialVestingScheduleConfigs.length; i++) {
-            VestingScheduleConfig memory config = _initialVestingScheduleConfigs[i];
-            totalReserve += (config.freezeAmount + config.vestingAmount);
-         
-        }
-        // _mint(msg.sender, RESERVE);
         _vestingPool = new ERC20VestingPool(address(this));
+        _mint(msg.sender, RESERVE);
+
+        // initialize all the vesting schedule
+        for (uint256 i = 0; i < _initialVestingScheduleConfigs.length; i++) {
+            addVestingSchedule(_initialVestingScheduleConfigs[i]);
+        }
     }
 
     function pause() external onlyOwner {
@@ -61,7 +57,8 @@ contract King is ERC20, Pausable, Ownable {
         public
         onlyOwner
     {
-        approve(
+        _approve(
+            address(this),
             address(_vestingPool),
             _config.freezeAmount + _config.vestingAmount
         );
