@@ -29,7 +29,7 @@ import type {
 
 export type VestingScheduleConfigStruct = {
   beneficiaryAddress: PromiseOrValue<string>;
-  openNow: PromiseOrValue<boolean>;
+  startNow: PromiseOrValue<boolean>;
   freezeDuration: PromiseOrValue<BigNumberish>;
   freezeAmount: PromiseOrValue<BigNumberish>;
   vestingDuration: PromiseOrValue<BigNumberish>;
@@ -45,7 +45,7 @@ export type VestingScheduleConfigStructOutput = [
   BigNumber
 ] & {
   beneficiaryAddress: string;
-  openNow: boolean;
+  startNow: boolean;
   freezeDuration: BigNumber;
   freezeAmount: BigNumber;
   vestingDuration: BigNumber;
@@ -55,7 +55,6 @@ export type VestingScheduleConfigStructOutput = [
 export interface KingInterface extends utils.Interface {
   functions: {
     "MAX_SUPPLY()": FunctionFragment;
-    "addVestingSchedule((address,bool,uint256,uint256,uint256,uint256))": FunctionFragment;
     "allowance(address,address)": FunctionFragment;
     "approve(address,uint256)": FunctionFragment;
     "balanceOf(address)": FunctionFragment;
@@ -63,6 +62,7 @@ export interface KingInterface extends utils.Interface {
     "decreaseAllowance(address,uint256)": FunctionFragment;
     "getVestingPoolAddress()": FunctionFragment;
     "increaseAllowance(address,uint256)": FunctionFragment;
+    "initVestingPool((address,bool,uint256,uint256,uint256,uint256)[])": FunctionFragment;
     "name()": FunctionFragment;
     "owner()": FunctionFragment;
     "pause()": FunctionFragment;
@@ -80,7 +80,6 @@ export interface KingInterface extends utils.Interface {
   getFunction(
     nameOrSignatureOrTopic:
       | "MAX_SUPPLY"
-      | "addVestingSchedule"
       | "allowance"
       | "approve"
       | "balanceOf"
@@ -88,6 +87,7 @@ export interface KingInterface extends utils.Interface {
       | "decreaseAllowance"
       | "getVestingPoolAddress"
       | "increaseAllowance"
+      | "initVestingPool"
       | "name"
       | "owner"
       | "pause"
@@ -105,10 +105,6 @@ export interface KingInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "MAX_SUPPLY",
     values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "addVestingSchedule",
-    values: [VestingScheduleConfigStruct]
   ): string;
   encodeFunctionData(
     functionFragment: "allowance",
@@ -134,6 +130,10 @@ export interface KingInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "increaseAllowance",
     values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "initVestingPool",
+    values: [VestingScheduleConfigStruct[]]
   ): string;
   encodeFunctionData(functionFragment: "name", values?: undefined): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
@@ -168,10 +168,6 @@ export interface KingInterface extends utils.Interface {
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
 
   decodeFunctionResult(functionFragment: "MAX_SUPPLY", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "addVestingSchedule",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "allowance", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "approve", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "balanceOf", data: BytesLike): Result;
@@ -186,6 +182,10 @@ export interface KingInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "increaseAllowance",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "initVestingPool",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "name", data: BytesLike): Result;
@@ -215,7 +215,6 @@ export interface KingInterface extends utils.Interface {
 
   events: {
     "Approval(address,address,uint256)": EventFragment;
-    "AuthSignerSet(address)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "Paused(address)": EventFragment;
     "Transfer(address,address,uint256)": EventFragment;
@@ -223,7 +222,6 @@ export interface KingInterface extends utils.Interface {
   };
 
   getEvent(nameOrSignatureOrTopic: "Approval"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "AuthSignerSet"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Transfer"): EventFragment;
@@ -241,13 +239,6 @@ export type ApprovalEvent = TypedEvent<
 >;
 
 export type ApprovalEventFilter = TypedEventFilter<ApprovalEvent>;
-
-export interface AuthSignerSetEventObject {
-  newSigner: string;
-}
-export type AuthSignerSetEvent = TypedEvent<[string], AuthSignerSetEventObject>;
-
-export type AuthSignerSetEventFilter = TypedEventFilter<AuthSignerSetEvent>;
 
 export interface OwnershipTransferredEventObject {
   previousOwner: string;
@@ -316,11 +307,6 @@ export interface King extends BaseContract {
   functions: {
     MAX_SUPPLY(overrides?: CallOverrides): Promise<[BigNumber]>;
 
-    addVestingSchedule(
-      _config: VestingScheduleConfigStruct,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
     allowance(
       owner: PromiseOrValue<string>,
       spender: PromiseOrValue<string>,
@@ -351,6 +337,11 @@ export interface King extends BaseContract {
     increaseAllowance(
       spender: PromiseOrValue<string>,
       addedValue: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    initVestingPool(
+      _initialVestingScheduleConfigs: VestingScheduleConfigStruct[],
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -399,11 +390,6 @@ export interface King extends BaseContract {
 
   MAX_SUPPLY(overrides?: CallOverrides): Promise<BigNumber>;
 
-  addVestingSchedule(
-    _config: VestingScheduleConfigStruct,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
   allowance(
     owner: PromiseOrValue<string>,
     spender: PromiseOrValue<string>,
@@ -434,6 +420,11 @@ export interface King extends BaseContract {
   increaseAllowance(
     spender: PromiseOrValue<string>,
     addedValue: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  initVestingPool(
+    _initialVestingScheduleConfigs: VestingScheduleConfigStruct[],
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -482,11 +473,6 @@ export interface King extends BaseContract {
   callStatic: {
     MAX_SUPPLY(overrides?: CallOverrides): Promise<BigNumber>;
 
-    addVestingSchedule(
-      _config: VestingScheduleConfigStruct,
-      overrides?: CallOverrides
-    ): Promise<void>;
-
     allowance(
       owner: PromiseOrValue<string>,
       spender: PromiseOrValue<string>,
@@ -519,6 +505,11 @@ export interface King extends BaseContract {
       addedValue: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<boolean>;
+
+    initVestingPool(
+      _initialVestingScheduleConfigs: VestingScheduleConfigStruct[],
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     name(overrides?: CallOverrides): Promise<string>;
 
@@ -569,13 +560,6 @@ export interface King extends BaseContract {
       value?: null
     ): ApprovalEventFilter;
 
-    "AuthSignerSet(address)"(
-      newSigner?: PromiseOrValue<string> | null
-    ): AuthSignerSetEventFilter;
-    AuthSignerSet(
-      newSigner?: PromiseOrValue<string> | null
-    ): AuthSignerSetEventFilter;
-
     "OwnershipTransferred(address,address)"(
       previousOwner?: PromiseOrValue<string> | null,
       newOwner?: PromiseOrValue<string> | null
@@ -605,11 +589,6 @@ export interface King extends BaseContract {
 
   estimateGas: {
     MAX_SUPPLY(overrides?: CallOverrides): Promise<BigNumber>;
-
-    addVestingSchedule(
-      _config: VestingScheduleConfigStruct,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
 
     allowance(
       owner: PromiseOrValue<string>,
@@ -641,6 +620,11 @@ export interface King extends BaseContract {
     increaseAllowance(
       spender: PromiseOrValue<string>,
       addedValue: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    initVestingPool(
+      _initialVestingScheduleConfigs: VestingScheduleConfigStruct[],
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -690,11 +674,6 @@ export interface King extends BaseContract {
   populateTransaction: {
     MAX_SUPPLY(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    addVestingSchedule(
-      _config: VestingScheduleConfigStruct,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
     allowance(
       owner: PromiseOrValue<string>,
       spender: PromiseOrValue<string>,
@@ -727,6 +706,11 @@ export interface King extends BaseContract {
     increaseAllowance(
       spender: PromiseOrValue<string>,
       addedValue: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    initVestingPool(
+      _initialVestingScheduleConfigs: VestingScheduleConfigStruct[],
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 

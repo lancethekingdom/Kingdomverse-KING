@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 struct VestingSchedule {
     bool valid;
@@ -24,9 +25,9 @@ struct VestingScheduleConfig {
     uint256 vestingAmount;
 }
 
-contract ERC20VestingPool is Ownable {
+contract KingVestingPool is Ownable {
     // the contract should receive erc20 then
-    IERC20 _token;
+    IERC20 immutable _king;
 
     event EtherReleased(uint256 amount);
     event ERC20Released(address indexed token, uint256 amount);
@@ -39,11 +40,11 @@ contract ERC20VestingPool is Ownable {
     constructor(address tokenAddress) {
         require(tokenAddress != address(0), "Invalid Token Address");
 
-        _token = IERC20(tokenAddress);
+        _king = IERC20(tokenAddress);
     }
 
     function addVestingSchedule(VestingScheduleConfig memory _config)
-        external
+        public
         onlyOwner
     {
         require(
@@ -54,19 +55,16 @@ contract ERC20VestingPool is Ownable {
         VestingSchedule storage vestingSchedule = _vestingSchedules[
             _config.beneficiaryAddress
         ];
-
         require(!vestingSchedule.valid, "Vesting schedule already exists");
         require(
             _config.vestingAmount + _config.freezeAmount > 0,
             "Invalid vesting amount"
         );
-
-        IERC20(_token).transferFrom(
+        _king.transferFrom(
             msg.sender,
             address(this),
             _config.vestingAmount + _config.freezeAmount
         );
-
         vestingSchedule.valid = true;
         vestingSchedule.vestingAmount = _config.vestingAmount;
         vestingSchedule.freezeAmount = _config.freezeAmount;
@@ -77,10 +75,22 @@ contract ERC20VestingPool is Ownable {
             : 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     }
 
+    function getAddress() external view returns (address) {
+        return address(this);
+    }
+
+    function addVestingSchedules(VestingScheduleConfig[] memory _configs)
+        external
+        onlyOwner
+    {
+        for (uint256 i = 0; i < _configs.length; i++) {
+            addVestingSchedule(_configs[i]);
+        }
+    }
+
     function getVestingSchedule(address _beneficiaryAddress)
         external
         view
-        onlyOwner
         returns (VestingSchedule memory)
     {
         return _vestingSchedules[_beneficiaryAddress];

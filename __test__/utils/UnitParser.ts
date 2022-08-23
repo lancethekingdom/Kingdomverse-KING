@@ -11,7 +11,7 @@ const toEther = (num: number) => ethers.utils.parseEther(num.toString())
 
 const fromEther = (ether: BigNumber) => Number(ethers.utils.formatEther(ether))
 
-export const unitParser = {
+export const UnitParser = {
   toBigNumber,
   fromBigNumber,
   toEther,

@@ -20,7 +20,7 @@ export type { IERC20Metadata } from "./@openzeppelin/contracts/token/ERC20/exten
 export { IERC20Metadata__factory } from "./factories/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata__factory";
 export type { IERC20 } from "./@openzeppelin/contracts/token/ERC20/IERC20";
 export { IERC20__factory } from "./factories/@openzeppelin/contracts/token/ERC20/IERC20__factory";
-export type { ERC20VestingPool } from "./contracts/ERC20VestingPool";
-export { ERC20VestingPool__factory } from "./factories/contracts/ERC20VestingPool__factory";
 export type { King } from "./contracts/King";
 export { King__factory } from "./factories/contracts/King__factory";
+export type { KingVestingPool } from "./contracts/KingVestingPool";
+export { KingVestingPool__factory } from "./factories/contracts/KingVestingPool__factory";
