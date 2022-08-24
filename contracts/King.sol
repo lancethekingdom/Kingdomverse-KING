@@ -26,7 +26,7 @@ contract King is ERC20, Pausable, Ownable {
             VestingScheduleConfig
                 memory config = _initialVestingScheduleConfigs[i];
             totalVestingAmount += config.vestingAmount;
-            totalVestingAmount += config.freezeAmount;
+            totalVestingAmount += config.lockupAmount;
         }
         reserve = totalVestingAmount;
 
@@ -48,7 +48,7 @@ contract King is ERC20, Pausable, Ownable {
             VestingScheduleConfig
                 memory config = _initialVestingScheduleConfigs[i];
             totalInitialVestingAmount += config.vestingAmount;
-            totalInitialVestingAmount += config.freezeAmount;
+            totalInitialVestingAmount += config.lockupAmount;
         }
         require(
             totalInitialVestingAmount == reserve,

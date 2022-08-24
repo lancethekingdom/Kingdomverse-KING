@@ -4,13 +4,15 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import "hardhat/console.sol";
 
 struct VestingSchedule {
     bool valid;
-    uint256 startTime;
-    uint256 freezeDuration;
-    uint256 freezeAmount;
+    uint256 lockupDuration;
+    uint256 lockupAmount;
     uint256 vestingDuration;
     uint256 vestingAmount;
     uint256 claimed;
@@ -18,21 +20,24 @@ struct VestingSchedule {
 
 struct VestingScheduleConfig {
     address beneficiaryAddress;
-    bool startNow;
-    uint256 freezeDuration;
-    uint256 freezeAmount;
+    uint256 lockupDuration;
+    uint256 lockupAmount;
     uint256 vestingDuration;
     uint256 vestingAmount;
 }
 
 contract KingVestingPool is Ownable {
-    // the contract should receive erc20 then
     IERC20 immutable _king;
+    // one month
+    uint256 public constant UNIT_VESTING_INTERVAL = 2592000;
+    uint256 public immutable launchTime;
 
     event EtherReleased(uint256 amount);
     event ERC20Released(address indexed token, uint256 amount);
 
     mapping(address => VestingSchedule) private _vestingSchedules;
+
+    using SafeMath for uint256;
 
     /**
      * @dev Set the beneficiary, start timestamp and vesting duration of the vesting wallet.
@@ -41,6 +46,7 @@ contract KingVestingPool is Ownable {
         require(tokenAddress != address(0), "Invalid Token Address");
 
         _king = IERC20(tokenAddress);
+        launchTime = block.timestamp;
     }
 
     function getKingTokenAddress() external view returns (address) {
@@ -60,23 +66,18 @@ contract KingVestingPool is Ownable {
             _config.beneficiaryAddress
         ];
         require(!vestingSchedule.valid, "Vesting schedule already exists");
-        require(
-            (_config.vestingAmount + _config.freezeAmount) > 0,
-            "Invalid vesting amount"
+
+        uint256 totalVestingSum = _config.vestingAmount.add(
+            _config.lockupAmount
         );
-        _king.transferFrom(
-            msg.sender,
-            address(this),
-            _config.vestingAmount + _config.freezeAmount
-        );
+        require((totalVestingSum) > 0, "Invalid vesting amount");
+        _king.transferFrom(msg.sender, address(this), totalVestingSum);
+
         vestingSchedule.valid = true;
         vestingSchedule.vestingAmount = _config.vestingAmount;
-        vestingSchedule.freezeAmount = _config.freezeAmount;
-        vestingSchedule.freezeDuration = _config.freezeDuration;
+        vestingSchedule.lockupAmount = _config.lockupAmount;
+        vestingSchedule.lockupDuration = _config.lockupDuration;
         vestingSchedule.vestingDuration = _config.vestingDuration;
-        vestingSchedule.startTime = _config.startNow
-            ? block.timestamp
-            : 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
     }
 
     function getAddress() external view returns (address) {
@@ -98,6 +99,56 @@ contract KingVestingPool is Ownable {
         returns (VestingSchedule memory)
     {
         return _vestingSchedules[_beneficiaryAddress];
+    }
+
+    function _getLockupReleased(address beneficiary)
+        internal
+        view
+        returns (uint256)
+    {
+        VestingSchedule storage schedule = _vestingSchedules[beneficiary];
+        if (block.timestamp < (schedule.lockupDuration.add(launchTime))) {
+            return 0;
+        }
+        return schedule.lockupAmount;
+    }
+
+    function _getVestingReleased(address beneficiary)
+        internal
+        view
+        returns (uint256)
+    {
+        VestingSchedule storage schedule = _vestingSchedules[beneficiary];
+
+        uint256 vestingStartTime = schedule.lockupDuration.add(launchTime);
+
+        if (block.timestamp < vestingStartTime) {
+            return 0;
+        }
+
+        uint256 vestingEndTime = schedule.vestingDuration.add(vestingStartTime);
+        if (block.timestamp >= vestingEndTime) {
+            return schedule.vestingAmount;
+        }
+
+        uint256 unitVestingRelease = schedule
+            .vestingAmount
+            .mul(UNIT_VESTING_INTERVAL)
+            .div(schedule.vestingDuration);
+        uint256 numOfVestingIntervalCompleted = (
+            block.timestamp.sub(vestingStartTime)
+        ).div(UNIT_VESTING_INTERVAL);
+
+        return unitVestingRelease.mul(numOfVestingIntervalCompleted);
+    }
+
+    function getTotalReleased(address beneficiary)
+        public
+        view
+        returns (uint256)
+    {
+        return
+            _getLockupReleased(beneficiary) + _getVestingReleased(beneficiary);
     }
 
     // /**
