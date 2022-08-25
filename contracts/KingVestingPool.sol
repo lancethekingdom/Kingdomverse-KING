@@ -4,13 +4,15 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 import "hardhat/console.sol";
 
 struct VestingSchedule {
     bool valid;
-    uint256 startTime;
-    uint256 freezeDuration;
-    uint256 freezeAmount;
+    uint256 lockupDuration;
+    uint256 lockupAmount;
     uint256 vestingDuration;
     uint256 vestingAmount;
     uint256 claimed;
@@ -18,16 +20,19 @@ struct VestingSchedule {
 
 struct VestingScheduleConfig {
     address beneficiaryAddress;
-    bool startNow;
-    uint256 freezeDuration;
-    uint256 freezeAmount;
+    uint256 lockupDuration;
+    uint256 lockupAmount;
     uint256 vestingDuration;
     uint256 vestingAmount;
 }
 
 contract KingVestingPool is Ownable {
-    // the contract should receive erc20 then
+    using SafeMath for uint256;
+
     IERC20 immutable _king;
+    // one month
+    uint256 public constant UNIT_VESTING_INTERVAL = 2592000;
+    uint256 public immutable launchTime;
 
     event EtherReleased(uint256 amount);
     event ERC20Released(address indexed token, uint256 amount);
@@ -41,6 +46,7 @@ contract KingVestingPool is Ownable {
         require(tokenAddress != address(0), "Invalid Token Address");
 
         _king = IERC20(tokenAddress);
+        launchTime = block.timestamp;
     }
 
     function getKingTokenAddress() external view returns (address) {
@@ -60,23 +66,19 @@ contract KingVestingPool is Ownable {
             _config.beneficiaryAddress
         ];
         require(!vestingSchedule.valid, "Vesting schedule already exists");
-        require(
-            (_config.vestingAmount + _config.freezeAmount) > 0,
-            "Invalid vesting amount"
+
+        uint256 totalVestingSum = _config.vestingAmount.add(
+            _config.lockupAmount
         );
-        _king.transferFrom(
-            msg.sender,
-            address(this),
-            _config.vestingAmount + _config.freezeAmount
-        );
+        require((totalVestingSum) > 0, "Invalid vesting amount");
+        _king.transferFrom(msg.sender, address(this), totalVestingSum);
+
         vestingSchedule.valid = true;
         vestingSchedule.vestingAmount = _config.vestingAmount;
-        vestingSchedule.freezeAmount = _config.freezeAmount;
-        vestingSchedule.freezeDuration = _config.freezeDuration;
+        vestingSchedule.lockupAmount = _config.lockupAmount;
+        vestingSchedule.lockupDuration = _config.lockupDuration;
         vestingSchedule.vestingDuration = _config.vestingDuration;
-        vestingSchedule.startTime = _config.startNow
-            ? block.timestamp
-            : 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
+
     }
 
     function getAddress() external view returns (address) {
@@ -100,115 +102,67 @@ contract KingVestingPool is Ownable {
         return _vestingSchedules[_beneficiaryAddress];
     }
 
-    // /**
-    //  * @dev The contract should be able to receive Eth.
-    //  */
-    // receive() external payable virtual {}
+    function _getLockupReleased(address beneficiary)
+        internal
+        view
+        returns (uint256)
+    {
+        VestingSchedule storage schedule = _vestingSchedules[beneficiary];
+        if (block.timestamp < (schedule.lockupDuration.add(launchTime))) {
+            return 0;
+        }
+        return schedule.lockupAmount;
+    }
 
-    // /**
-    //  * @dev Getter for the beneficiary address.
-    //  */
-    // function beneficiary() public view virtual returns (address) {
-    //     return _beneficiary;
-    // }
+    function _getVestingReleased(address beneficiary)
+        internal
+        view
+        returns (uint256)
+    {
+        VestingSchedule storage schedule = _vestingSchedules[beneficiary];
 
-    // /**
-    //  * @dev Getter for the start timestamp.
-    //  */
-    // function start() public view virtual returns (uint256) {
-    //     return _start;
-    // }
+        uint256 vestingStartTime = schedule.lockupDuration.add(launchTime);
 
-    // /**
-    //  * @dev Getter for the vesting duration.
-    //  */
-    // function duration() public view virtual returns (uint256) {
-    //     return _duration;
-    // }
+        if (block.timestamp < vestingStartTime) {
+            return 0;
+        }
 
-    // /**
-    //  * @dev Amount of eth already released
-    //  */
-    // function released() public view virtual returns (uint256) {
-    //     return _released;
-    // }
+        uint256 vestingEndTime = schedule.vestingDuration.add(vestingStartTime);
+        if (block.timestamp >= vestingEndTime) {
+            return schedule.vestingAmount;
+        }
 
-    // /**
-    //  * @dev Amount of token already released
-    //  */
-    // function released(address token) public view virtual returns (uint256) {
-    //     return _erc20Released[token];
-    // }
+        uint256 unitVestingRelease = schedule
+            .vestingAmount
+            .mul(UNIT_VESTING_INTERVAL)
+            .div(schedule.vestingDuration);
+        uint256 numOfVestingIntervalCompleted = (
+            block.timestamp.sub(vestingStartTime)
+        ).div(UNIT_VESTING_INTERVAL);
 
-    // /**
-    //  * @dev Release the native token (ether) that have already vested.
-    //  *
-    //  * Emits a {EtherReleased} event.
-    //  */
-    // function release() public virtual {
-    //     uint256 releasable = vestedAmount(uint64(block.timestamp)) - released();
-    //     _released += releasable;
-    //     emit EtherReleased(releasable);
-    //     Address.sendValue(payable(beneficiary()), releasable);
-    // }
+        return unitVestingRelease.mul(numOfVestingIntervalCompleted);
+    }
 
-    // /**
-    //  * @dev Release the tokens that have already vested.
-    //  *
-    //  * Emits a {ERC20Released} event.
-    //  */
-    // function release(address token) public virtual {
-    //     uint256 releasable = vestedAmount(token, uint64(block.timestamp)) -
-    //         released(token);
-    //     _erc20Released[token] += releasable;
-    //     emit ERC20Released(token, releasable);
-    //     SafeERC20.safeTransfer(IERC20(token), beneficiary(), releasable);
-    // }
+    function getTotalReleased()
+        public
+        view
+        returns (uint256)
+    {
+        return
+            _getLockupReleased(msg.sender).add(_getVestingReleased(msg.sender));
+    }
 
-    // /**
-    //  * @dev Calculates the amount of ether that has already vested. Default implementation is a linear vesting curve.
-    //  */
-    // function vestedAmount(uint64 timestamp)
-    //     public
-    //     view
-    //     virtual
-    //     returns (uint256)
-    // {
-    //     return _vestingSchedule(address(this).balance + released(), timestamp);
-    // }
+    function getClaimable() public view returns (uint256) {
+        VestingSchedule storage schedule = _vestingSchedules[msg.sender];
+        return getTotalReleased().sub(schedule.claimed);
+    }
 
-    // /**
-    //  * @dev Calculates the amount of tokens that has already vested. Default implementation is a linear vesting curve.
-    //  */
-    // function vestedAmount(address token, uint64 timestamp)
-    //     public
-    //     view
-    //     virtual
-    //     returns (uint256)
-    // {
-    //     return
-    //         _vestingSchedule(
-    //             IERC20(token).balanceOf(address(this)) + released(token),
-    //             timestamp
-    //         );
-    // }
+    function claim() external {
+        uint256 clamable = getClaimable();
 
-    // /**
-    //  * @dev Virtual implementation of the vesting formula. This returns the amount vested, as a function of time, for
-    //  * an asset given its total historical allocation.
-    //  */
-    // function _vestingSchedule(uint256 totalAllocation, uint64 timestamp)
-    //     internal
-    //     view
-    //     virtual
-    //     returns (uint256)
-    // {
-    //     if (timestamp < start()) {
-    //         return 0;
-    //     } else if (timestamp > start() + duration()) {
-    //         return totalAllocation;
-    //     } else {
-    //         return (totalAllocation * (timestamp - start())) / duration();
-    //     }
-    // }
+        require(clamable > 0, "No claimable balance");
+        VestingSchedule storage schedule = _vestingSchedules[msg.sender];
+        schedule.claimed += clamable;
+        _king.transfer(msg.sender, clamable);
+    }
 }

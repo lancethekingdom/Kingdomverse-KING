@@ -1,11 +1,11 @@
 import { deployKingToken } from '../../utils/deployKingToken'
 import { expect, assert } from 'chai'
 import { VestingScheduleConfigStruct } from '../../../types/contracts/King'
-// @ts-ignore
 import { ethers } from 'hardhat'
 import { UnitParser } from '../../utils/UnitParser'
 import Chance from 'chance'
 import { SafeMath } from '../../utils/safeMath'
+import { KingVestingPoolFactory } from '../../utils/KingVestingPoolFactory'
 const chance = new Chance()
 
 describe('UNIT TEST: King Token - initVestingPool', () => {
@@ -23,32 +23,15 @@ describe('UNIT TEST: King Token - initVestingPool', () => {
   })
 
   it('should throw error if the total initial vesting amount does not match with the reseved token amount', async () => {
-    const [owner, beneficiaryA] = await ethers.getSigners()
+    const [owner, beneficiaryA, beneficiaryB] = await ethers.getSigners()
 
-    const configA: VestingScheduleConfigStruct = {
+    const configA = KingVestingPoolFactory.generateVestingScheduleConfig({
       beneficiaryAddress: beneficiaryA.address,
-      startNow: false,
-      freezeDuration: 0,
-      freezeAmount: UnitParser.toEther(
-        chance.integer({ min: 1, max: 2000000 }),
-      ),
-      vestingDuration: 0,
-      vestingAmount: UnitParser.toEther(
-        chance.integer({ min: 1, max: 2000000 }),
-      ),
-    }
-    const configB: VestingScheduleConfigStruct = {
-      beneficiaryAddress: beneficiaryA.address,
-      startNow: false,
-      freezeDuration: 0,
-      freezeAmount: UnitParser.toEther(
-        chance.integer({ min: 1, max: 2000000 }),
-      ),
-      vestingDuration: 0,
-      vestingAmount: UnitParser.toEther(
-        chance.integer({ min: 1, max: 2000000 }),
-      ),
-    }
+    })
+
+    const configB = KingVestingPoolFactory.generateVestingScheduleConfig({
+      beneficiaryAddress: beneficiaryB.address,
+    })
 
     const [token] = await deployKingToken({
       owner,
@@ -58,7 +41,7 @@ describe('UNIT TEST: King Token - initVestingPool', () => {
     return token
       .connect(owner)
       .initVestingPool([
-        { ...configA, freezeAmount: (configA.freezeAmount as number) + 1 },
+        { ...configA, lockupAmount: (configA.lockupAmount as number) + 1 },
         configB,
       ])
       .then(() => assert.fail())
@@ -73,31 +56,14 @@ describe('UNIT TEST: King Token - initVestingPool', () => {
   it('should transfer reserved token from King contract balance to vesting pool', async () => {
     const [owner, beneficiaryA, beneficiaryB] = await ethers.getSigners()
 
-    const configA: VestingScheduleConfigStruct = {
+    const configA = KingVestingPoolFactory.generateVestingScheduleConfig({
       beneficiaryAddress: beneficiaryA.address,
-      startNow: false,
-      freezeDuration: 0,
-      freezeAmount: UnitParser.toEther(
-        chance.integer({ min: 1, max: 2000000 }),
-      ),
-      vestingDuration: 0,
-      vestingAmount: UnitParser.toEther(
-        chance.integer({ min: 1, max: 2000000 }),
-      ),
-    }
-    const configB: VestingScheduleConfigStruct = {
-      beneficiaryAddress: beneficiaryB.address,
-      startNow: false,
-      freezeDuration: 0,
-      freezeAmount: UnitParser.toEther(
-        chance.integer({ min: 1, max: 2000000 }),
-      ),
-      vestingDuration: 0,
-      vestingAmount: UnitParser.toEther(
-        chance.integer({ min: 1, max: 2000000 }),
-      ),
-    }
+    })
 
+    const configB = KingVestingPoolFactory.generateVestingScheduleConfig({
+      beneficiaryAddress: beneficiaryB.address,
+    })
+    
     const vestingScheduleConfigs = [configA, configB]
 
     const [token] = await deployKingToken({
