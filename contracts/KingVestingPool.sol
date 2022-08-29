@@ -78,7 +78,6 @@ contract KingVestingPool is Ownable {
         vestingSchedule.lockupAmount = _config.lockupAmount;
         vestingSchedule.lockupDuration = _config.lockupDuration;
         vestingSchedule.vestingDuration = _config.vestingDuration;
-
     }
 
     function getAddress() external view returns (address) {
@@ -143,11 +142,7 @@ contract KingVestingPool is Ownable {
         return unitVestingRelease.mul(numOfVestingIntervalCompleted);
     }
 
-    function getTotalReleased()
-        public
-        view
-        returns (uint256)
-    {
+    function getTotalReleased() public view returns (uint256) {
         return
             _getLockupReleased(msg.sender).add(_getVestingReleased(msg.sender));
     }
