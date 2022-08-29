@@ -3,7 +3,7 @@ import { deployMintableToken } from '../utils/deployMintableToken'
 import { UnitParser } from '../utils/UnitParser'
 
 describe.skip('UNIT TEST: Mintable - test', () => {
-  it('should return correct name when token is deployed', async () => {
+  it('testing gas fee of mint function', async () => {
     const [token, owner] = await deployMintableToken()
 
 
