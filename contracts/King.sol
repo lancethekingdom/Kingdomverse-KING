@@ -3,6 +3,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./KingVestingPool.sol";
@@ -10,7 +11,7 @@ import "./KingVestingPool.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "hardhat/console.sol";
 
-contract King is ERC20, Pausable, Ownable {
+contract King is ERC20, Pausable, Ownable, ERC20Burnable {
     uint256 public immutable reserve;
     uint256 public constant MAX_SUPPLY = 1000000000 ether;
     KingVestingPool private immutable _vestingPool;
@@ -63,6 +64,16 @@ contract King is ERC20, Pausable, Ownable {
 
     function unpause() external onlyOwner {
         _unpause();
+    }
+
+    function burn(uint256 amount) public override {
+        _requireNotPaused();
+        super.burn(amount);
+    }
+
+    function burnFrom(address account, uint256 amount) public override {
+        _requireNotPaused();
+        super.burnFrom(account, amount);
     }
 
     function _beforeTokenTransfer(
