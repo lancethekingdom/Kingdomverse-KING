@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./KingVestingPool.sol";
 
 import "@openzeppelin/contracts/utils/math/Math.sol";
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 contract King is ERC20, Pausable, Ownable, ERC20Burnable {
     uint256 public immutable reserve;
