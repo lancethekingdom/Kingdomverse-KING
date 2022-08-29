@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 struct VestingSchedule {
     bool valid;
@@ -71,7 +71,12 @@ contract KingVestingPool is Ownable {
             _config.lockupAmount
         );
         require((totalVestingSum) > 0, "Invalid vesting amount");
-        _king.transferFrom(msg.sender, address(this), totalVestingSum);
+        bool success = _king.transferFrom(
+            msg.sender,
+            address(this),
+            totalVestingSum
+        );
+        require(success, "Token transfer failed");
 
         vestingSchedule.valid = true;
         vestingSchedule.vestingAmount = _config.vestingAmount;
@@ -158,6 +163,7 @@ contract KingVestingPool is Ownable {
         require(clamable > 0, "No claimable balance");
         VestingSchedule storage schedule = _vestingSchedules[msg.sender];
         schedule.claimed += clamable;
-        _king.transfer(msg.sender, clamable);
+        bool success = _king.transfer(msg.sender, clamable);
+        require(success, "Token transfer failed");
     }
 }
