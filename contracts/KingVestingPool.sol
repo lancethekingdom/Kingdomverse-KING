@@ -29,13 +29,13 @@ struct VestingScheduleConfig {
 contract KingVestingPool is Ownable {
     using SafeMath for uint256;
 
+    event EtherReleased(uint256 amount);
+    event ERC20Released(address indexed token, uint256 amount);
+
     IERC20 immutable _king;
     // one month
     uint256 public constant UNIT_VESTING_INTERVAL = 2592000;
     uint256 public immutable launchTime;
-
-    event EtherReleased(uint256 amount);
-    event ERC20Released(address indexed token, uint256 amount);
 
     mapping(address => VestingSchedule) private _vestingSchedules;
 

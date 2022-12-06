@@ -288,13 +288,13 @@ describe('UNIT TEST: KingVestingPool - getTotalReleased', () => {
     )
     const {
       vestingPool,
-      vestingScheduleConfigs,
-      token,
     } = await KingVestingPoolFactory.utilVestingScheduleCreated({
       owner,
       vestingScheduleConfigs: [config],
     })
-    const randomGuyTotalReleased = await vestingPool.connect(random).getTotalReleased()
+    const randomGuyTotalReleased = await vestingPool
+      .connect(random)
+      .getTotalReleased()
 
     expect(randomGuyTotalReleased).to.equal(0)
   })
