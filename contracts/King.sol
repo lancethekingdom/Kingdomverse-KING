@@ -13,12 +13,9 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 // import "hardhat/console.sol";
 
 contract King is ERC20, Pausable, Ownable, ERC20Burnable {
-    uint256 public immutable reserve;
-    uint256 public constant MAX_SUPPLY = 1000000000 ether;
 
-    constructor(uint256 _reserve) ERC20("KING", "KING") {
-        reserve = _reserve;
-        _mint(address(this), reserve);
+    constructor(uint256 _supply) ERC20("KING", "KING") {
+        _mint(_msgSender(), _supply);
     }
 
     function pause() external onlyOwner {
@@ -46,10 +43,5 @@ contract King is ERC20, Pausable, Ownable, ERC20Burnable {
     ) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
         require(!paused(), "Token paused");
-    }
-
-    function _mint(address account, uint256 amount) internal virtual override {
-        require(ERC20.totalSupply() + amount <= MAX_SUPPLY, "MAX_SUPPLY");
-        super._mint(account, amount);
     }
 }
