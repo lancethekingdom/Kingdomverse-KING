@@ -1,7 +1,5 @@
 import { expect, assert } from 'chai'
-import { VestingScheduleConfigStruct } from '../../../types/contracts/King'
 import { ethers } from 'hardhat'
-import Chance from 'chance'
 import { SafeMath } from '../../utils/safeMath'
 import { deployKingVestingPool } from '../../utils/deployKingVestingPool'
 import { UnitParser } from '../../utils/UnitParser'

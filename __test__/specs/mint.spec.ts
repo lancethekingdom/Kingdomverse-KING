@@ -2,7 +2,7 @@ import { expect, assert } from 'chai'
 import { deployMintableToken } from '../utils/deployMintableToken'
 import { UnitParser } from '../utils/UnitParser'
 
-describe.skip('UNIT TEST: Mintable - test', () => {
+describe('UNIT TEST: Mintable - test', () => {
   it('testing gas fee of mint function', async () => {
     const [token, owner] = await deployMintableToken()
 
